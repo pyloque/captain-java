@@ -22,40 +22,44 @@ public class ServiceItem {
 		this.ttl = ttl;
 	}
 
-	public String host() {
+	public String getHost() {
 		return host;
 	}
 
-	public void host(String host) {
+	public void setHost(String host) {
 		this.host = host;
 	}
 
-	public int port() {
+	public int getPort() {
 		return port;
 	}
 
-	public void port(int port) {
+	public void setPort(int port) {
 		this.port = port;
 	}
 
-	public int ttl() {
+	public int getTtl() {
 		return ttl;
 	}
 
-	public void ttl(int ttl) {
+	public void setTtl(int ttl) {
 		this.ttl = ttl;
 	}
 	
-	public void probe(int probe) {
+	public void setProbe(int probe) {
 		this.probe = probe;
 	}
 	
-	public int probe() {
+	public int getProbe() {
 		return probe;
 	}
 
 	public String urlRoot() {
 		return String.format("http://%s:%s", host, port);
+	}
+	
+	public String toString() {
+		return String.format("%s:%s", host, port);
 	}
 
 }

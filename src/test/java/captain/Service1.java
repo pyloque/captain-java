@@ -25,6 +25,11 @@ public class Service1 {
 			public void kvUpdate(CaptainClient client, String key) {
 				System.out.println(client.kv(key));
 			}
+
+			@Override
+			public void serviceUpdate(CaptainClient client, String name) {
+				
+			}
 		}).watchKv("project_settings_service1").stopBeforeExit().start();
 		client.hang(); // hang just for test
 	}

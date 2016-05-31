@@ -3,7 +3,6 @@ package captain;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +11,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,9 +25,9 @@ public class CaptainClient {
 	private ServiceItem currentOrigin;
 	private LocalService localServices = new LocalService();
 	private LocalKv localKvs = new LocalKv();
-	private Map<String, ServiceItem> providedServices = new HashMap<String, ServiceItem>();
-	private Map<String, Boolean> watchedServices = new HashMap<String, Boolean>();
-	private Set<String> watchedKvs = new HashSet<String>();
+	private Map<String, ServiceItem> providedServices = new ConcurrentHashMap<String, ServiceItem>();
+	private Map<String, Boolean> watchedServices = new ConcurrentHashMap<String, Boolean>();
+	private Map<String, Boolean> watchedKvs = new ConcurrentHashMap<String, Boolean>();
 	private BeatKeeper keeper = new BeatKeeper(this);
 	private List<ICaptainObserver> observers = new ArrayList<ICaptainObserver>(1);
 	private BlockingQueue<Boolean> waiter;
@@ -44,12 +44,12 @@ public class CaptainClient {
 		Random r = new Random();
 		int totalProbe = 0;
 		for (ServiceItem origin : this.origins) {
-			totalProbe += origin.probe();
+			totalProbe += origin.getProbe();
 		}
 		int randomProbe = r.nextInt(totalProbe);
 		int accProbe = 0;
 		for (ServiceItem origin : this.origins) {
-			accProbe += origin.probe();
+			accProbe += origin.getProbe();
 			if (accProbe > randomProbe) {
 				currentOrigin = origin;
 				break;
@@ -65,13 +65,13 @@ public class CaptainClient {
 	}
 
 	public void onOriginFail() {
-		if (currentOrigin.probe() > 1) {
-			currentOrigin.probe(currentOrigin.probe() >> 1);
+		if (currentOrigin.getProbe() > 1) {
+			currentOrigin.setProbe(currentOrigin.getProbe() >> 1);
 		}
 	}
-	
+
 	public void onOriginSuccess() {
-		currentOrigin.probe(ServiceItem.DEFAULT_PROBE);
+		currentOrigin.setProbe(ServiceItem.DEFAULT_PROBE);
 	}
 
 	public boolean[] checkDirty() throws UnirestException {
@@ -108,7 +108,7 @@ public class CaptainClient {
 		if (this.watchedKvs.isEmpty()) {
 			return Collections.emptySet();
 		}
-		JSONObject js = Unirest.get(urlRoot() + "/api/kv/version").queryString("key", this.watchedKvs).asJson()
+		JSONObject js = Unirest.get(urlRoot() + "/api/kv/version").queryString("key", this.watchedKvs.keySet()).asJson()
 				.getBody().getObject();
 		JSONObject versions = js.getJSONObject("versions");
 		Set<String> dirties = new HashSet<String>();
@@ -142,6 +142,7 @@ public class CaptainClient {
 		} else if (!addrs.isEmpty() && !this.healthy(name)) {
 			this.online(name);
 		}
+		this.serviceUpdate(name);
 	}
 
 	public void reloadKv(String key) throws UnirestException {
@@ -155,31 +156,55 @@ public class CaptainClient {
 	public void keepService() throws UnirestException {
 		for (String name : this.providedServices.keySet()) {
 			ServiceItem service = this.providedServices.get(name);
-			Unirest.get(urlRoot() + "/api/service/keep").queryString("name", name).queryString("host", service.host())
-					.queryString("port", service.port()).queryString("ttl", service.ttl()).asJson();
+			Unirest.get(urlRoot() + "/api/service/keep").queryString("name", name).queryString("host", service.getHost())
+					.queryString("port", service.getPort()).queryString("ttl", service.getTtl()).asJson();
 		}
 	}
 
 	public void cancelService() throws UnirestException {
 		for (String name : this.providedServices.keySet()) {
 			ServiceItem service = this.providedServices.get(name);
-			Unirest.get(urlRoot() + "/api/service/cancel").queryString("name", name).queryString("host", service.host())
-					.queryString("port", service.port()).asJson();
+			Unirest.get(urlRoot() + "/api/service/cancel").queryString("name", name).queryString("host", service.getHost())
+					.queryString("port", service.getPort()).asJson();
 		}
 	}
 
-	public CaptainClient watchService(String... serviceName) {
+	public CaptainClient watch(String... serviceName) {
 		for (String name : serviceName) {
-			this.watchedServices.put(name, false);
-			this.localServices.initService(name);
+			if (!this.watchedServices.containsKey(name)) {
+				this.watchedServices.put(name, false);
+				this.localServices.initService(name);
+			}
+		}
+		return this;
+	}
+
+	public CaptainClient unwatch(String... serviceName) {
+		for (String name : serviceName) {
+			if (this.watchedServices.containsKey(name)) {
+				this.watchedServices.remove(name);
+				this.localServices.removeService(name);
+			}
 		}
 		return this;
 	}
 
 	public CaptainClient watchKv(String... key) {
 		for (String k : key) {
-			this.watchedKvs.add(k);
-			this.localKvs.initKv(k);
+			if (!this.watchedKvs.containsKey(key)) {
+				this.watchedKvs.put(k, true);
+				this.localKvs.initKv(k);
+			}
+		}
+		return this;
+	}
+
+	public CaptainClient unwatchKv(String... key) {
+		for (String k : key) {
+			if (this.watchedKvs.containsKey(key)) {
+				this.watchedKvs.remove(k);
+				this.localKvs.removeKv(k);
+			}
 		}
 		return this;
 	}
@@ -198,8 +223,23 @@ public class CaptainClient {
 		return this;
 	}
 
+	public CaptainClient unprovide(String... names) {
+		for (String name : names) {
+			this.providedServices.remove(name);
+		}
+		return this;
+	}
+
 	public ServiceItem select(String name) {
 		return localServices.randomService(name);
+	}
+
+	public List<ServiceItem> selectAll(String name) {
+		return localServices.allServices(name);
+	}
+	
+	public long serviceVersion(String name) {
+		return localServices.version(name);
 	}
 
 	/**
@@ -246,9 +286,19 @@ public class CaptainClient {
 			observer.kvUpdate(this, key);
 		}
 	}
+	
+	public void serviceUpdate(String name) {
+		for (ICaptainObserver observer : this.observers) {
+			observer.serviceUpdate(this, name);
+		}
+	}
 
 	public JSONObject kv(String key) {
 		return this.localKvs.kv(key);
+	}
+	
+	public long kvVersion(String key) {
+		return this.localKvs.version(key);
 	}
 
 	public void online(String name) {
@@ -325,7 +375,7 @@ public class CaptainClient {
 	}
 
 	public CaptainClient stopBeforeExit() {
-		CaptainClient that = this;
+		final CaptainClient that = this;
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				that.stop();

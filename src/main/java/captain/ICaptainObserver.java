@@ -13,6 +13,11 @@ public interface ICaptainObserver {
 	public void allOnline(CaptainClient client);
 	
 	/**
+	 * service dependency updated callback
+	 */
+	public void serviceUpdate(CaptainClient client, String name);
+	
+	/**
 	 * kv update callback
 	 */
 	public void kvUpdate(CaptainClient client, String key);

@@ -1,17 +1,17 @@
 package captain;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalService {
 
 	private long globalVersion = -1;
-	private Map<String, Long> versions = new HashMap<String, Long>();
-	private Map<String, List<ServiceItem>> serviceLists = new HashMap<String, List<ServiceItem>>();
-	private Map<String, List<ServiceItem>> failoverServices = new HashMap<String, List<ServiceItem>>();
+	private Map<String, Long> versions = new ConcurrentHashMap<String, Long>();
+	private Map<String, List<ServiceItem>> serviceLists = new ConcurrentHashMap<String, List<ServiceItem>>();
+	private Map<String, List<ServiceItem>> failoverServices = new ConcurrentHashMap<String, List<ServiceItem>>();
 	private ThreadLocal<Random> randoms = new ThreadLocal<Random>();
 
 	public ServiceItem randomService(String name) {
@@ -30,6 +30,10 @@ public class LocalService {
 			randoms.set(random);
 		}
 		return services.get(random.nextInt(services.size()));
+	}
+	
+	public List<ServiceItem> allServices(String name) {
+		return this.serviceLists.getOrDefault(name, Collections.emptyList());
 	}
 
 	public long globalVersion() {
@@ -54,6 +58,10 @@ public class LocalService {
 
 	public void initService(String name) {
 		this.serviceLists.put(name, Collections.emptyList());
+	}
+	
+	public void removeService(String name) {
+		this.serviceLists.remove(name);
 	}
 	
 	public void failover(String name, List<ServiceItem> services) {

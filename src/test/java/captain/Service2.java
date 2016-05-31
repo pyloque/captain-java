@@ -25,6 +25,11 @@ public class Service2 {
 			public void kvUpdate(CaptainClient client, String key) {
 				
 			}
+
+			@Override
+			public void serviceUpdate(CaptainClient client, String name) {
+				
+			}
 		}).stopBeforeExit().start();
 		client.hang(); // hang just for test
 	}

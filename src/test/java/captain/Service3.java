@@ -4,7 +4,7 @@ public class Service3 {
 
 	public static void main(String[] args) throws Exception {
 		CaptainClient client = new CaptainClient("localhost", 6789);
-		client.watchService("service1", "service2").provide("service3", new ServiceItem("localhost", 6300))
+		client.watch("service1", "service2").provide("service3", new ServiceItem("localhost", 6300))
 				.observe(new ICaptainObserver() {
 
 					@Override
@@ -26,6 +26,11 @@ public class Service3 {
 
 					@Override
 					public void kvUpdate(CaptainClient client, String key) {
+						
+					}
+
+					@Override
+					public void serviceUpdate(CaptainClient client, String name) {
 						
 					}
 

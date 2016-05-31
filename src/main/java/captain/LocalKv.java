@@ -1,15 +1,15 @@
 package captain;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.JSONObject;
 
 public class LocalKv {
 
 	private long globalVersion = -1;
-	private Map<String, JSONObject> kvs = new HashMap<String, JSONObject>();
-	private Map<String, Long> versions = new HashMap<String, Long>();
+	private Map<String, JSONObject> kvs = new ConcurrentHashMap<String, JSONObject>();
+	private Map<String, Long> versions = new ConcurrentHashMap<String, Long>();
 
 	public long globalVersion() {
 		return globalVersion;
@@ -19,20 +19,24 @@ public class LocalKv {
 		this.globalVersion = version;
 	}
 
-	public long version(String name) {
-		return this.versions.getOrDefault(name, -1L);
+	public long version(String key) {
+		return this.versions.getOrDefault(key, -1L);
 	}
 
-	public void version(String name, long version) {
-		this.versions.put(name, version);
+	public void version(String key, long version) {
+		this.versions.put(key, version);
 	}
 
-	public void initKv(String name) {
-		this.kvs.put(name, new JSONObject());
+	public void initKv(String key) {
+		this.kvs.put(key, new JSONObject());
+	}
+	
+	public void removeKv(String key) {
+		this.kvs.remove(key);
 	}
 
-	public void replaceKv(String name, JSONObject value) {
-		this.kvs.put(name, value);
+	public void replaceKv(String key, JSONObject value) {
+		this.kvs.put(key, value);
 	}
 
 	public JSONObject kv(String key) {
