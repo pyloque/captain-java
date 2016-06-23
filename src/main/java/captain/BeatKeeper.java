@@ -57,16 +57,16 @@ public class BeatKeeper extends Thread {
 
 	public void watch() throws UnirestException {
 		boolean[] flags = client.checkDirty();
-		if (flags[0]) {
-			Set<String> dirties = client.checkServiceVersions();
-			for (String name : dirties) {
-				client.reloadService(name);
-			}
-		}
 		if (flags[1]) {
 			Set<String> dirties = client.checkKvVersions();
 			for (String name : dirties) {
 				client.reloadKv(name);
+			}
+		}
+		if (flags[0]) {
+			Set<String> dirties = client.checkServiceVersions();
+			for (String name : dirties) {
+				client.reloadService(name);
 			}
 		}
 	}

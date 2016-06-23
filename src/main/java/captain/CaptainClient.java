@@ -132,7 +132,8 @@ public class CaptainClient {
 		List<ServiceItem> addrs = new ArrayList<ServiceItem>();
 		for (int i = 0; i < services.length(); i++) {
 			js = services.getJSONObject(i);
-			ServiceItem item = new ServiceItem(js.getString("host"), js.getInt("port"), js.getInt("ttl"));
+			ServiceItem item = new ServiceItem(js.getString("host"), js.getInt("port"), js.getInt("ttl"),
+					js.getString("payload"));
 			addrs.add(item);
 		}
 		localServices.version(name, version);
@@ -156,16 +157,17 @@ public class CaptainClient {
 	public void keepService() throws UnirestException {
 		for (String name : this.providedServices.keySet()) {
 			ServiceItem service = this.providedServices.get(name);
-			Unirest.get(urlRoot() + "/api/service/keep").queryString("name", name).queryString("host", service.getHost())
-					.queryString("port", service.getPort()).queryString("ttl", service.getTtl()).asJson();
+			Unirest.get(urlRoot() + "/api/service/keep").queryString("name", name)
+					.queryString("host", service.getHost()).queryString("port", service.getPort())
+					.queryString("ttl", service.getTtl()).queryString("payload", service.getPayload()).asJson();
 		}
 	}
 
 	public void cancelService() throws UnirestException {
 		for (String name : this.providedServices.keySet()) {
 			ServiceItem service = this.providedServices.get(name);
-			Unirest.get(urlRoot() + "/api/service/cancel").queryString("name", name).queryString("host", service.getHost())
-					.queryString("port", service.getPort()).asJson();
+			Unirest.get(urlRoot() + "/api/service/cancel").queryString("name", name)
+					.queryString("host", service.getHost()).queryString("port", service.getPort()).asJson();
 		}
 	}
 
@@ -237,7 +239,7 @@ public class CaptainClient {
 	public List<ServiceItem> selectAll(String name) {
 		return localServices.allServices(name);
 	}
-	
+
 	public long serviceVersion(String name) {
 		return localServices.version(name);
 	}
@@ -286,7 +288,7 @@ public class CaptainClient {
 			observer.kvUpdate(this, key);
 		}
 	}
-	
+
 	public void serviceUpdate(String name) {
 		for (ICaptainObserver observer : this.observers) {
 			observer.serviceUpdate(this, name);
@@ -296,7 +298,7 @@ public class CaptainClient {
 	public JSONObject kv(String key) {
 		return this.localKvs.kv(key);
 	}
-	
+
 	public long kvVersion(String key) {
 		return this.localKvs.version(key);
 	}
@@ -350,6 +352,13 @@ public class CaptainClient {
 	public void start() {
 		Unirest.setConcurrency(origins.size(), 1);
 		Unirest.setTimeouts(2000, 1000);
+		for (String key : this.watchedKvs.keySet()) {
+			try {
+				this.reloadKv(key);
+			} catch (UnirestException e) {
+				throw new CaptainException("load kv error");
+			}
+		}
 		this.keeper.setDaemon(true);
 		this.keeper.start();
 		if (this.watchedServices.isEmpty()) {
