@@ -16,7 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.async.Callback;
 import com.mashape.unirest.http.exceptions.UnirestException;
 
 public class CaptainClient {
@@ -152,6 +155,28 @@ public class CaptainClient {
 		localKvs.version(key, kv.getLong("version"));
 		localKvs.replaceKv(key, kv.getJSONObject("value"));
 		this.kvUpdate(key);
+	}
+
+	public void updateKv(String key, JSONObject js) {
+		Unirest.post(urlRoot() + "/api/kv/set").field("key", key).field("value", js.toString())
+				.asJsonAsync(new Callback<JsonNode>() {
+
+					@Override
+					public void completed(HttpResponse<JsonNode> response) {
+
+					}
+
+					@Override
+					public void failed(UnirestException e) {
+						e.printStackTrace();
+					}
+
+					@Override
+					public void cancelled() {
+
+					}
+
+				});
 	}
 
 	public void keepService() throws UnirestException {
