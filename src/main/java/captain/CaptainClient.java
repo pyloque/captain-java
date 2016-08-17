@@ -35,14 +35,16 @@ public class CaptainClient {
 	private List<ICaptainObserver> observers = new ArrayList<ICaptainObserver>(1);
 	private BlockingQueue<Boolean> waiter;
 
-	public CaptainClient() {}
-	
+	public CaptainClient() {
+	}
+
 	public CaptainClient(List<ServiceItem> origins) {
 		this.origins.addAll(origins);
 	}
 
-	public void origins(List<ServiceItem> origins) {
+	public CaptainClient origins(List<ServiceItem> origins) {
 		this.origins = origins;
+		return this;
 	}
 
 	public CaptainClient(String host, int port) {
