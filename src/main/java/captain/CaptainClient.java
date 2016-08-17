@@ -39,6 +39,10 @@ public class CaptainClient {
 		this.origins.addAll(origins);
 	}
 
+	public void origins(List<ServiceItem> origins) {
+		this.origins = origins;
+	}
+
 	public CaptainClient(String host, int port) {
 		origins.add(new ServiceItem(host, port));
 	}
