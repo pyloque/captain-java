@@ -87,7 +87,7 @@ public class CaptainClient {
 
 	public int nextSequence(String name) {
 		try {
-			JSONObject js = Unirest.get(urlRoot() + "/seq/next?name=" + name).asJson().getBody().getObject();
+			JSONObject js = Unirest.get(urlRoot() + "/api/seq/next?name=" + name).asJson().getBody().getObject();
 			if (js.getBoolean("ok")) {
 				return js.getInt("value");
 			}
@@ -99,7 +99,7 @@ public class CaptainClient {
 
 	public void releaseSequence(String name, int id) {
 		try {
-			Unirest.get(urlRoot() + String.format("/seq/release?name=%s&id=%s", name, id)).asJson();
+			Unirest.get(urlRoot() + String.format("/api/seq/release?name=%s&id=%s", name, id)).asJson();
 		} catch (UnirestException e) {
 			e.printStackTrace();
 		}

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>zhangyue</groupId>
 	<artifactId>captain-java</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<name>zhangyue:captain-java</name>
 	<packaging>jar</packaging>
 	<description>Java Client for Captain Service Discovery</description>
