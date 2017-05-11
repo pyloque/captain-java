@@ -92,6 +92,7 @@ public class CaptainClient {
 				return js.getInt("value");
 			}
 		} catch (UnirestException e) {
+			e.printStackTrace();
 		}
 		throw new IllegalStateException("get next sequence failed");
 	}
