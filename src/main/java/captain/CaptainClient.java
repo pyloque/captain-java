@@ -85,6 +85,25 @@ public class CaptainClient {
 		currentOrigin.setProbe(ServiceItem.DEFAULT_PROBE);
 	}
 
+	public int nextSequence(String name) {
+		try {
+			JSONObject js = Unirest.get(urlRoot() + "/seq/next?name=" + name).asJson().getBody().getObject();
+			if (js.getBoolean("ok")) {
+				return js.getInt("value");
+			}
+		} catch (UnirestException e) {
+		}
+		throw new IllegalStateException("get next sequence failed");
+	}
+
+	public void releaseSequence(String name, int id) {
+		try {
+			Unirest.get(urlRoot() + String.format("/seq/release?name=%s&id=%s", name, id)).asJson();
+		} catch (UnirestException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public boolean[] checkDirty() throws UnirestException {
 		JSONObject js = Unirest.get(urlRoot() + "/api/version").asJson().getBody().getObject();
 		long serviceVersion = js.getLong("service.version");
